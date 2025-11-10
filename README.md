@@ -20,12 +20,13 @@ A fully controllable 4-legged spider robot powered by ESP32 and PCA9685 servo co
 |-----------|----------|-------|
 | ESP32 Development Board | 1 | Any ESP32 variant |
 | PCA9685 16-Channel PWM Servo Driver | 1 | Controls up to 16 servos |
-| MG90S/MG996R Servo Motors | 12 | 3 per leg (Coxa, Femur, Tibia) |
+| MG90S Servo Motors | 12 | 3 per leg (Coxa, Femur, Tibia) |
 | 18650 Li-ion Battery | 2 | 7.4V series configuration |
 | Battery Holder | 1 | For 2x 18650 batteries |
 | Robot Chassis & Legs | 1 set | 3D printed or custom |
 | Jumper Wires | Pack | Male-to-female recommended |
 | Breadboard | 1 | Optional for prototyping |
+| buck converter | 1 | DC power converter |
 
 ### Wiring Diagram
 
