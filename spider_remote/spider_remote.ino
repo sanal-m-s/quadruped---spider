@@ -1,11 +1,15 @@
-// Crawling Robot for ESP32 + PCA9685
+// Program1/Program1.ino
+
+// Crawling Robot for ESP32 + PCA9685 with Bluetooth Control
 // Converted from original Arduino code
 
 #include <Wire.h>
 #include <Adafruit_PWMServoDriver.h>
 #include <Ticker.h>
 #include "FlexiTimer2.h"
+#include <BluetoothSerial.h>
 
+BluetoothSerial SerialBT;
 Adafruit_PWMServoDriver pwm = Adafruit_PWMServoDriver(0x40);
 
 // Servo config
@@ -64,6 +68,11 @@ const float turn_y1 = y_start + y_step / 2;
 const float turn_x0 = turn_x1 - temp_b * cos(temp_alpha);
 const float turn_y0 = temp_b * sin(temp_alpha) - turn_y1 - length_side;
 
+// Bluetooth control variables
+bool bluetoothConnected = false;
+unsigned long lastCommandTime = 0;
+const unsigned long COMMAND_TIMEOUT = 1000; // Stop if no command received for 1 second
+
 // Convert angle (0–180°) to PCA9685 PWM pulse
 int angleToPulse(int angle) {
   return map(angle, 0, 180, SERVO_MIN, SERVO_MAX);
@@ -76,6 +85,10 @@ void setup()
 {
   Serial.begin(115200);
   Serial.println("Robot starts initialization");
+  
+  // Initialize Bluetooth
+  SerialBT.begin("spy"); // Bluetooth device name
+  Serial.println("Bluetooth device is ready for pairing: 'spy'");
   
   // Initialize PCA9685
   Wire.begin();
@@ -114,41 +127,74 @@ void setup()
    ---------------------------------------------------------------------------*/
 void loop()
 {
-  Serial.println("Step forward");
-  step_forward(5);
-  delay(2000);
+  // Check for Bluetooth commands
+  checkBluetooth();
   
-  Serial.println("Step back");
-  step_back(5);
-  delay(2000);
-  
-  Serial.println("Turn left");
-  turn_left(5);
-  delay(2000);
-  
-  Serial.println("Turn right");
-  turn_right(5);
-  delay(2000);
-  
-  Serial.println("Hand wave");
-  hand_wave(3);
-  delay(2000);
-  
-  Serial.println("Hand shake");
-  hand_shake(3);
-  delay(2000);  
-  
-  Serial.println("Body dance");
-  body_dance(10);
-  delay(2000);    
-  
-  Serial.println("Sit");
-  sit();
-  delay(5000);
-  
-  Serial.println("Stand");
-  stand();
-  delay(2000);
+  // Auto-stop if no commands received for a while
+  if (millis() - lastCommandTime > COMMAND_TIMEOUT && lastCommandTime != 0) {
+    // Stop any ongoing movement
+    lastCommandTime = 0;
+  }
+}
+
+/*
+  - Bluetooth command processing
+   ---------------------------------------------------------------------------*/
+void checkBluetooth() {
+  if (SerialBT.available()) {
+    char command = SerialBT.read();
+    lastCommandTime = millis();
+    
+    Serial.print("Received command: ");
+    Serial.println(command);
+    
+    switch (command) {
+      case 'F': // Forward
+        step_forward(1);
+        break;
+      case 'B': // Backward
+        step_back(1);
+        break;
+      case 'L': // Turn Left
+        turn_left(1);
+        break;
+      case 'R': // Turn Right
+        turn_right(1);
+        break;
+      case 'S': // Stop
+        // Just stand still
+        stand();
+        break;
+      case 'U': // Hand Wave
+        hand_wave(1);
+        break;
+      case 'D': // Hand Shake
+        hand_shake(1);
+        break;
+      case 'W': // Body Dance
+        body_dance(5);
+        break;
+      case 'I': // Sit
+        sit();
+        break;
+      case 'O': // Stand
+        stand();
+        break;
+      case 'V': // Head Up
+        head_up(10);
+        break;
+      case 'X': // Head Down
+        head_down(10);
+        break;
+      default:
+        Serial.print("Unknown command: ");
+        Serial.println(command);
+        break;
+    }
+    
+    // Send acknowledgment back to app
+    SerialBT.println("OK");
+  }
 }
 
 /*
@@ -178,9 +224,6 @@ void stand(void)
   }
   wait_all_reach();
 }
-
-// [Include all your movement functions here - they remain the same as original]
-// step_forward, step_back, turn_left, turn_right, hand_wave, hand_shake, body_dance, etc.
 
 void step_forward(unsigned int step) {
   move_speed = leg_move_speed;
